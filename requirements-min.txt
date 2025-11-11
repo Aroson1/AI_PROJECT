@@ -1,0 +1,11 @@
+# Minimal requirements for Fast Neural Style Transfer
+# Optimized for Google Colab Free Tier
+# CSE 311 AI Project
+
+torch>=1.9.0
+torchvision>=0.10.0
+Pillow>=8.0.0
+matplotlib>=3.3.0
+tqdm>=4.60.0
+numpy>=1.19.0
+opencv-python>=4.5.0

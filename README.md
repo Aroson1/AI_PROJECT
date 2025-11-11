@@ -1,59 +1,187 @@
-# Neural Style Transfer  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yash-choudhary/Neural-Style-Transfer/blob/master/Fast%20Neural%20Style%20Transfer.ipynb)
+# Fast Neural Style Transfer - CSE 311 AI Project
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/master/notebooks/Colab_Train_And_Run.ipynb)
+
+**Project Title:** Real-Time Artistic Image Stylization Using Deep Neural Networks
+
+A lightweight implementation of Fast Neural Style Transfer optimized for Google Colab Free Tier. This project enables training and applying artistic styles to images in real-time using deep convolutional neural networks.
 
 <p align="center">
-  <img src="assets/animate.gif" width="650">
+  <img src="assets/animate.gif" width="650" alt="Style Transfer Animation">
 </p>
 
-According to Wikipedia, Neural Style Transfer (NST) also called Artistic Style Transfer refers to a class of software algorithms that manipulate digital images, or videos, in order to adopt the appearance or visual style of another image. NST algorithms are characterized by their use of deep neural networks for the sake of image transformation.
+## 📋 Project Overview
 
-In simple words, Neural style transfer is the process of creating art using computers. It is the process of painting the contents of one image with the style of another.
+Neural Style Transfer (NST) is a deep learning technique that applies the artistic style of one image to the content of another. This implementation uses a feed-forward convolutional neural network with residual blocks for real-time stylization, trained with perceptual losses computed using a pre-trained VGG19 network.
 
-## Our Content Image
-<p align="center">
-  <img src="assets/japanese_garden.jpg" width="500">
-  <br>
-  <em> Fig 1. Content Image</em>
-</p>
+## ✨ Key Features
 
-## Our Style Image
-<p align="center">
-  <img src="assets/picasso_selfportrait.jpg" width="300">
-  <br>
-  <em> Fig 2. Style Image</em>
-</p>
+- **Fast Training**: Optimized for Colab Free Tier (2-3 epochs, ~2000 images)
+- **Lightweight Architecture**: Feed-forward CNN with residual blocks
+- **Efficient Loss Computation**: VGG19-based perceptual losses (content + style + TV)
+- **Real-time Inference**: Stylize images in seconds
+- **Easy to Use**: Single Colab notebook for complete workflow
+- **Educational**: Well-documented code perfect for learning
 
-## **How does NST work?**
-<p align="center">
-  <img src="https://miro.medium.com/max/1294/1*ZgW520SZr1QkGoFd3xqYMw.jpeg" width="500" title="How neural style transfer works.">
-  <br>
-  <em> Fig 3. Neural style transfer working</em>
-</p>
+## ## 🏗️ Architecture
 
-First, Let's discuss the traditional approach of neural style transfer first given by Gatys et al. in there paper "A Neural Algorithm of Artistic Style".It was built on a very neat idea that, 
+### Generator Network (TransformerNet)
+- **Encoder**: 3 convolutional layers (downsampling)
+- **Transformer**: 5 residual blocks  
+- **Decoder**: 3 convolutional layers (upsampling)
+- Total parameters: ~1.6M
 
-**It is possible to separate the style representation and content representations in a CNN, learnt during a computer vision task (e.g. image recognition task).**
+### Loss Function (VGG19-based)
+- **Content Loss**: MSE on relu3_3 features (weight: 1.0)
+- **Style Loss**: Gram matrix MSE on relu1_2, relu2_2, relu3_3, relu4_3 (weight: 10.0)
+- **Total Variation Loss**: Spatial smoothness (weight: 1e-6)
 
-Neural style transfer uses a pretrained convolution neural network. Then to define a loss function which blends two images seamlessly to create visually appealing art, NST defines the following inputs:
+## 📦 Repository Structure
 
-    1. A content image (c) — the image we want to transfer a style to
-    2. A style image (s) — the image we want to transfer the style from
-    3. An input (generated) image (g) — the image that contains the final result (the only trainable variable)
+```
+AI_Project/
+├── src/                          # Core source code
+│   ├── transformer.py            # Generator network
+│   ├── vgg_loss.py              # VGG19 loss functions
+│   ├── datasets.py              # Dataset loader
+│   ├── train.py                 # Training script
+│   └── inference.py             # Inference script
+├── notebooks/
+│   └── Colab_Train_And_Run.ipynb  # Main notebook
+├── models/checkpoints/           # Saved models (git ignored)
+├── requirements-min.txt          # Minimal dependencies
+└── README.md                     # This file
+```
 
-The basic idea behind this approach is that CNN pretrained on large image datasets develop an intuition of how images and objects in those images look in terms of content and style. The shallow layers of these networks are more concerned with content of the image like shapes and structural details. The deeper layers are good at understanding the texture and style of the image.
+## 🚀 Quick Start - Google Colab
 
-<p align="center">
-  <img src="https://miro.medium.com/max/1400/1*EvBcni8o_O3v4RUl640TZQ@2x.png" width="500">
-  <br>
-  <em>Fig 4. VGG16 laverwise extracted features</em>
-</p>
+**Easiest Method** (Recommended):
 
-So, content, style and generated images are passed through the network and the weigts of specific layers are compared using loss fuctions like content loss and style loss. 
+1. Click the **"Open in Colab"** badge at the top
+2. Run all cells in the notebook
+3. The notebook automatically:
+   - Installs dependencies
+   - Downloads COCO dataset subset
+   - Trains the model (2-3 epochs, ~15-20 minutes)
+   - Plots loss curves
+   - Generates stylized images
 
-**Content Loss**: The content cost function is making sure that the content present in the content image is captured in the generated image. As CNNs capture information about content in the higher levels, where the lower levels are more focused on individual pixel values, we use the top-most CNN layer to define the content loss function.
+## 💻 Local Installation
 
-**Style Loss**:To extract the style information from the VGG network, we use all the layers of the CNN. Furthermore, style information is measured as the amount of correlation present between features maps in a given layer. Next, a loss is defined as the difference of correlation present between the feature maps computed by the generated image and the style image.
+```bash
+# Clone repository
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+cd YOUR_REPO
 
-Then, an optimizer back-propagates and updates the pixel values of the generated image and the process repeats. This process of searching for pixel values is very slow and not at all practical for styling multiple images.
+# Install dependencies
+pip install -r requirements-min.txt
+
+# Download COCO dataset (validation set)
+wget http://images.cocodataset.org/zips/val2017.zip
+unzip val2017.zip
+```
+
+## 🎨 Usage
+
+### Training
+
+```bash
+python src/train.py \
+  --dataset-path val2017 \
+  --style-image picasso_selfportrait.jpg \
+  --epochs 3 \
+  --batch-size 4 \
+  --image-size 256 \
+  --subset-size 2000
+```
+
+**Training Parameters:**
+- `--epochs`: Number of epochs (default: 3)
+- `--batch-size`: Batch size (default: 4, adjust for your GPU)
+- `--image-size`: Image resolution (default: 256)
+- `--subset-size`: Number of training images (default: 2000)
+- `--lr`: Learning rate (default: 1e-3)
+- `--style-weight`: Style loss weight (default: 10.0)
+- `--content-weight`: Content loss weight (default: 1.0)
+
+### Inference
+
+**Single Image:**
+```bash
+python src/inference.py \
+  --checkpoint models/checkpoints/final_model.pth \
+  --input path/to/content/image.jpg \
+  --output stylized_output.jpg
+```
+
+**Batch Processing:**
+```bash
+python src/inference.py \
+  --checkpoint models/checkpoints/final_model.pth \
+  --input input_directory/ \
+  --output output_directory/ \
+  --batch
+```
+
+## 📊 Training Results
+
+Typical results on Colab Free Tier (T4 GPU):
+- **Training time**: ~5-6 minutes per epoch
+- **Total training time**: ~15-20 minutes (3 epochs)
+- **Inference time**: ~0.5 seconds per image
+- **Model size**: ~6.5 MB
+
+## 📚 Requirements
+
+Minimal dependencies (see `requirements-min.txt`):
+- Python >= 3.7
+- PyTorch >= 1.9.0
+- torchvision >= 0.10.0
+- Pillow >= 8.0.0
+- matplotlib >= 3.3.0
+- tqdm >= 4.60.0
+- numpy >= 1.19.0
+- opencv-python >= 4.5.0
+
+## 🎯 Project Details - CSE 311
+
+**Course**: CSE 311 - Artificial Intelligence  
+**Project Title**: Real-Time Artistic Image Stylization Using Deep Neural Networks
+
+**Objectives:**
+1. Implement Fast Neural Style Transfer for real-time image stylization
+2. Optimize training for limited computational resources (Colab Free Tier)
+3. Achieve artistic style transfer while preserving content structure
+4. Demonstrate practical deep learning application in computer vision
+
+**Dataset**: COCO 2017 (subset of 2,000 images at 256×256 resolution)
+
+## 🔗 Important Links
+
+- **COCO Dataset**: http://images.cocodataset.org/zips/val2017.zip
+- **Original Paper**: [Perceptual Losses for Real-Time Style Transfer](https://arxiv.org/abs/1603.08155)
+- **VGG19 Architecture**: [Very Deep Convolutional Networks](https://arxiv.org/abs/1409.1556)
+
+## 📖 References
+
+1. Johnson et al. - [Perceptual Losses for Real-Time Style Transfer and Super-Resolution](https://arxiv.org/abs/1603.08155)
+2. Gatys et al. - [A Neural Algorithm of Artistic Style](https://arxiv.org/abs/1508.06576)
+3. [PyTorch Style Transfer Tutorial](https://pytorch.org/tutorials/advanced/neural_style_tutorial.html)
+4. [CS231n: Convolutional Neural Networks for Visual Recognition](http://cs231n.stanford.edu/)
+
+## 📄 License
+
+This project is for educational purposes as part of CSE 311 coursework.
+
+## 🙏 Acknowledgments
+
+- Original implementation inspired by various Fast Neural Style Transfer implementations
+- COCO dataset from Microsoft COCO: Common Objects in Context
+- Pre-trained VGG19 from PyTorch Model Zoo
+
+---
+
+**Note**: This is a simplified, educational implementation optimized for Google Colab Free Tier. For production use, consider training with more epochs, higher resolution images, and additional optimizations.
 
 ## The Problem: 
 Each new content image will reset the generated image pixels and the process of pixel search needs to be done again. That makes the process very very slow and does not gurantee good results. Due these time and compute constraints, it cannot be implemented in production.
