@@ -1,6 +1,6 @@
 # Fast Neural Style Transfer - CSE 311 AI Project
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/master/notebooks/Colab_Train_And_Run.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Aroson1/AI_PROJECT/blob/master/notebooks/Colab_Train_And_Run.ipynb)
 
 **Project Title:** Real-Time Artistic Image Stylization Using Deep Neural Networks
 
