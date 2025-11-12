@@ -10,7 +10,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 from transformer import TransformerNet
-from datasets import get_test_image_transform, tensor_to_image
+from src.datasets import get_test_image_transform, tensor_to_image
 
 
 def stylize_image(model, image_path, output_path=None, device='cpu', display=True):
