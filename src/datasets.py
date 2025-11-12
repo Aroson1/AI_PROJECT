@@ -1,12 +1,20 @@
 """
 Dataset loader for COCO 2017 with optional subsetting
 Supports loading a subset of images for fast experimentation
+(Matches original Fast Neural Style Transfer implementation)
 """
 
 import os
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
+import torch
+
+
+# Mean and std for ImageNet normalization (used in original)
+IMAGENET_MEAN = np.array([0.485, 0.456, 0.406])
+IMAGENET_STD = np.array([0.229, 0.224, 0.225])
 
 
 class CocoDataset(Dataset):
@@ -39,12 +47,15 @@ class CocoDataset(Dataset):
         print(f"Loaded {len(self.image_files)} images from {root_dir}")
     
     def default_transform(self):
-        """Default transformation for training images"""
+        """
+        Default transformation for training images
+        (Matches original: Resize with 1.15 factor, RandomCrop, ToTensor, Normalize)
+        """
         return transforms.Compose([
-            transforms.Resize(self.image_size),
-            transforms.CenterCrop(self.image_size),
+            transforms.Resize(int(self.image_size * 1.15)),
+            transforms.RandomCrop(self.image_size),
             transforms.ToTensor(),
-            # No normalization here - will be done in loss function for VGG
+            transforms.Normalize(IMAGENET_MEAN.tolist(), IMAGENET_STD.tolist()),
         ])
     
     def __len__(self):
@@ -65,6 +76,7 @@ class CocoDataset(Dataset):
 def get_style_image_transform(image_size=None):
     """
     Transform for style images
+    (Matches original implementation)
     
     Args:
         image_size: Optional size to resize to (if None, no resizing)
@@ -75,13 +87,17 @@ def get_style_image_transform(image_size=None):
             transforms.Resize(image_size),
             transforms.CenterCrop(image_size),
         ])
-    transform_list.append(transforms.ToTensor())
+    transform_list.extend([
+        transforms.ToTensor(),
+        transforms.Normalize(IMAGENET_MEAN.tolist(), IMAGENET_STD.tolist())
+    ])
     return transforms.Compose(transform_list)
 
 
 def get_test_image_transform(image_size=None):
     """
     Transform for test/inference images
+    (Matches original implementation)
     
     Args:
         image_size: Optional size to resize to (if None, keeps original size)
@@ -89,26 +105,71 @@ def get_test_image_transform(image_size=None):
     transform_list = []
     if image_size is not None:
         transform_list.append(transforms.Resize(image_size))
-    transform_list.append(transforms.ToTensor())
+    transform_list.extend([
+        transforms.ToTensor(),
+        transforms.Normalize(IMAGENET_MEAN.tolist(), IMAGENET_STD.tolist())
+    ])
     return transforms.Compose(transform_list)
 
 
-def denormalize(tensor):
+def denormalize(tensors):
     """
-    Denormalize tensor (if it was normalized) and clip to valid range
+    Denormalizes image tensors using ImageNet mean and std
+    (Matches original implementation)
     
     Args:
-        tensor: Image tensor
+        tensors: Image tensor(s)
     
     Returns:
-        Denormalized tensor in range [0, 1]
+        Denormalized tensor
     """
-    return tensor.clamp(0, 1)
+    mean = torch.tensor(IMAGENET_MEAN).view(1, 3, 1, 1)
+    std = torch.tensor(IMAGENET_STD).view(1, 3, 1, 1)
+    
+    if tensors.is_cuda:
+        mean = mean.cuda()
+        std = std.cuda()
+    
+    # Denormalize: x_original = x_normalized * std + mean
+    for c in range(3):
+        tensors[:, c].mul_(std[0, c]).add_(mean[0, c])
+    
+    return tensors
+
+
+def deprocess(image_tensor):
+    """
+    Denormalizes and rescales image tensor to numpy array
+    (Matches original deprocess function)
+    
+    Args:
+        image_tensor: Image tensor (1, C, H, W) or (C, H, W)
+    
+    Returns:
+        Numpy array image (H, W, C) in range [0, 255]
+    """
+    # Handle batch dimension
+    if image_tensor.dim() == 4:
+        image_tensor = image_tensor.clone()
+    else:
+        image_tensor = image_tensor.unsqueeze(0).clone()
+    
+    # Denormalize
+    image_tensor = denormalize(image_tensor)[0]
+    
+    # Scale to [0, 255]
+    image_tensor *= 255
+    
+    # Clip and convert to numpy
+    image_np = torch.clamp(image_tensor, 0, 255).cpu().numpy().astype(np.uint8)
+    image_np = image_np.transpose(1, 2, 0)
+    
+    return image_np
 
 
 def tensor_to_image(tensor):
     """
-    Convert tensor to PIL Image
+    Convert tensor to PIL Image (matches original implementation)
     
     Args:
         tensor: Image tensor of shape (C, H, W) or (B, C, H, W)
@@ -117,14 +178,12 @@ def tensor_to_image(tensor):
         PIL Image
     """
     # Handle batch dimension
-    if tensor.dim() == 4:
-        tensor = tensor.squeeze(0)
+    if tensor.dim() == 3:
+        tensor = tensor.unsqueeze(0)
     
-    # Denormalize and convert to numpy
-    tensor = denormalize(tensor)
-    image = tensor.cpu().numpy()
-    image = (image.transpose(1, 2, 0) * 255).astype('uint8')
-    return Image.fromarray(image)
+    # Use deprocess to properly denormalize and convert
+    image_np = deprocess(tensor)
+    return Image.fromarray(image_np)
 
 
 def create_dataloader(root_dir, batch_size=4, image_size=256, subset_size=None, 
